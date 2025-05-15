@@ -1,14 +1,11 @@
 declare module '@reduxjs/toolkit/query/react' {
   import { BaseQueryFn, EndpointDefinitions } from '@reduxjs/toolkit/query';
-  
   export interface ApiEndpointQuery<ResultType, QueryArg, BaseQuery extends BaseQueryFn> {
     query: (arg: QueryArg) => Parameters<BaseQuery>[0];
   }
-
   export interface ApiEndpointMutation<ResultType, QueryArg, BaseQuery extends BaseQueryFn> {
     query: (arg: QueryArg) => Parameters<BaseQuery>[0];
   }
-
   export function createApi<
     BaseQuery extends BaseQueryFn,
     Definitions extends EndpointDefinitions,
@@ -22,7 +19,6 @@ declare module '@reduxjs/toolkit/query/react' {
       tagTypes?: TagTypes[];
     }
   ): any;
-
   export interface EndpointBuilder<BaseQuery extends BaseQueryFn, TagTypes extends string> {
     query<ResultType, QueryArg>(
       options: ApiEndpointQuery<ResultType, QueryArg, BaseQuery>
@@ -31,10 +27,8 @@ declare module '@reduxjs/toolkit/query/react' {
       options: ApiEndpointMutation<ResultType, QueryArg, BaseQuery>
     ): any;
   }
-
   export function fetchBaseQuery(options: { baseUrl: string }): BaseQueryFn;
 }
-
 declare module '@reduxjs/toolkit/query' {
   export interface BaseQueryFn<
     Args = any,
@@ -47,8 +41,6 @@ declare module '@reduxjs/toolkit/query' {
       { data: Result; meta?: Meta } | { error: Error; meta?: Meta }
     >;
   }
-
   export type EndpointDefinitions = Record<string, any>;
-
   export function setupListeners(dispatch: any): () => void;
 } 

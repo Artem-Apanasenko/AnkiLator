@@ -13,26 +13,21 @@ import { useSelector } from 'react-redux';
 import FlashCard from '../../src/components/FlashCard';
 import { RootState } from '../../src/store';
 import { Card, Deck } from '../../src/types';
-
 type SearchResult = {
   card: Card;
   deck: Deck;
 };
-
 export default function ExploreScreen() {
   const { decks } = useSelector((state: RootState) => state.decks);
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
-
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setResults([]);
       return;
     }
-
     const searchResults: SearchResult[] = [];
     const lowerCaseSearch = searchTerm.toLowerCase();
-
     decks.forEach((deck: Deck) => {
       deck.cards.forEach((card: Card) => {
         if (
@@ -43,14 +38,11 @@ export default function ExploreScreen() {
         }
       });
     });
-
     setResults(searchResults);
   }, [searchTerm, decks]);
-
   const handleCardPress = (deckId: string, cardId: string) => {
     router.push(`/deck/${deckId}`);
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
@@ -68,7 +60,6 @@ export default function ExploreScreen() {
           </TouchableOpacity>
         )}
       </View>
-
       {searchTerm.trim() === '' ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateText}>
@@ -101,7 +92,6 @@ export default function ExploreScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

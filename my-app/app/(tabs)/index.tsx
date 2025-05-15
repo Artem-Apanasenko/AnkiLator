@@ -66,7 +66,7 @@ export default function IndexScreen() {
       )}
       
       <View style={styles.buttonContainer}>
-        <Button title="Add New Deck" onPress={handleAddDeck} />
+      <Button title="Add New Deck" onPress={handleAddDeck} />
       </View>
 
       <Modal

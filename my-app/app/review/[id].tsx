@@ -1,18 +1,23 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Button, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
-  runOnJS,
+  Extrapolate,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
+  withDelay,
+  withSequence,
+  withTiming
 } from 'react-native-reanimated';
 import { useDispatch, useSelector } from 'react-redux';
 import FlashCard from '../../src/components/FlashCard';
 import { RootState } from '../../src/store';
 import { resetCardReviewDate, updateCardReviewCount } from '../../src/store/deckSlice';
 import { Card, Deck } from '../../src/types';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,6 +36,9 @@ export default function ReviewScreen() {
   
   const cardPosition = useSharedValue(0);
   const cardOpacity = useSharedValue(1);
+  const cardScale = useSharedValue(1);
+  const cardRotation = useSharedValue(0);
+  const cardElevation = useSharedValue(5);
 
   // Function to check if all cards have been mastered (reviewed 10 times correctly)
   const areAllCardsMastered = useCallback((cardsToCheck: Card[]) => {
@@ -89,15 +97,44 @@ export default function ReviewScreen() {
     // Update correct/incorrect counters
     if (wasCorrect) {
       setCorrectCount(prev => prev + 1);
+      
+      // Correct answer animation - slide right with rotation
+      cardPosition.value = withSequence(
+        withTiming(20, { duration: 100 }), // Small bounce before the main animation
+        withTiming(SCREEN_WIDTH, { 
+          duration: 400,
+          easing: Easing.bezierFn(0.25, 0.1, 0.25, 1)
+        })
+      );
+      cardRotation.value = withTiming(5, { duration: 500 });
+      cardOpacity.value = withTiming(0, { duration: 400 });
+      cardScale.value = withTiming(0.8, { duration: 400 });
+      
+      // Trigger the next card after animation completes
+      setTimeout(() => {
+        moveToNextCard(wasCorrect, cardId);
+      }, 450);
     } else {
       setIncorrectCount(prev => prev + 1);
+      
+      // Incorrect answer animation - slide left with rotation
+      cardPosition.value = withSequence(
+        withTiming(-20, { duration: 100 }), // Small bounce before the main animation
+        withTiming(-SCREEN_WIDTH, { 
+          duration: 400,
+          easing: Easing.bezierFn(0.25, 0.1, 0.25, 1) 
+        })
+      );
+      cardRotation.value = withTiming(-5, { duration: 500 });
+      cardOpacity.value = withTiming(0, { duration: 400 });
+      cardScale.value = withTiming(0.8, { duration: 400 });
+      
+      // Trigger the next card after animation completes
+      setTimeout(() => {
+        moveToNextCard(wasCorrect, cardId);
+      }, 450);
     }
-    
-    // Move to next card with animation
-    cardOpacity.value = withTiming(0, { duration: 200, easing: Easing.ease }, () => {
-      runOnJS(moveToNextCard)(wasCorrect, cardId);
-    });
-  }, [deck, dispatch, cardOpacity]);
+  }, [deck, dispatch, cardPosition, cardOpacity, cardRotation, cardScale]);
 
   const moveToNextCard = useCallback((wasCorrect: boolean, currentCardId: string) => {
     // Update the active and completed card arrays
@@ -133,24 +170,81 @@ export default function ReviewScreen() {
     } else if (currentIndex < activeCards.length - 1) {
       // Move to the next card
       setCurrentIndex(currentIndex + 1);
-      cardPosition.value = 0;
-      cardOpacity.value = withTiming(1, { duration: 200 });
+      
+      // Reset animations for the new card with an entrance effect
+      cardPosition.value = wasCorrect ? -SCREEN_WIDTH : SCREEN_WIDTH;
+      cardRotation.value = wasCorrect ? -5 : 5;
+      cardScale.value = 0.9;
+      cardOpacity.value = 0;
+      
+      // Animate the new card in
+      setTimeout(() => {
+        cardPosition.value = withTiming(0, { 
+          duration: 400,
+          easing: Easing.bezierFn(0.25, 0.1, 0.25, 1)
+        });
+        cardRotation.value = withTiming(0, { duration: 400 });
+        cardScale.value = withTiming(1, { 
+          duration: 400,
+          easing: Easing.bezierFn(0.25, 0.1, 0.25, 1)
+        });
+        cardOpacity.value = withTiming(1, { duration: 300 });
+        cardElevation.value = withSequence(
+          withTiming(10, { duration: 200 }),
+          withDelay(100, withTiming(5, { duration: 200 }))
+        );
+      }, 50);
     } else {
       // Reset to the beginning of the remaining active cards
       setCurrentIndex(0);
+      
+      // Reset animations for the first card of the new cycle
       cardPosition.value = 0;
-      cardOpacity.value = withTiming(1, { duration: 200 });
+      cardRotation.value = 0;
+      cardScale.value = 0.9;
+      cardOpacity.value = 0;
+      
+      // Animate the first card of the new cycle in
+      setTimeout(() => {
+        cardScale.value = withTiming(1, { 
+          duration: 400,
+          easing: Easing.bezierFn(0.25, 0.1, 0.25, 1)
+        });
+        cardOpacity.value = withTiming(1, { duration: 300 });
+        cardElevation.value = withSequence(
+          withTiming(10, { duration: 200 }),
+          withDelay(100, withTiming(5, { duration: 200 }))
+        );
+      }, 50);
+      
       setReviewCycle(cycle => cycle + 1);
       
       // Reshuffle cards for the next cycle
       setActiveCards(cards => [...cards].sort(() => Math.random() - 0.5));
     }
-  }, [currentIndex, activeCards, completedCards, deck, cardPosition, cardOpacity]);
+  }, [currentIndex, activeCards, completedCards, deck, cardPosition, cardOpacity, cardRotation, cardScale, cardElevation]);
 
   const cardAnimatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateX: cardPosition.value }],
+      transform: [
+        { translateX: cardPosition.value },
+        { rotate: `${cardRotation.value}deg` },
+        { scale: cardScale.value }
+      ],
       opacity: cardOpacity.value,
+      shadowOpacity: interpolate(
+        cardElevation.value,
+        [5, 10],
+        [0.3, 0.6],
+        Extrapolate.CLAMP
+      ),
+      shadowRadius: interpolate(
+        cardElevation.value,
+        [5, 10],
+        [4, 8],
+        Extrapolate.CLAMP
+      ),
+      elevation: cardElevation.value,
     };
   });
 
@@ -310,6 +404,10 @@ const styles = StyleSheet.create({
   cardContainer: {
     flex: 1,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   buttonsContainer: {
     flexDirection: 'row',

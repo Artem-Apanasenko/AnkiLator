@@ -412,29 +412,29 @@ export default function DeckScreen() {
           </View>
 
           {filteredCards.length === 0 ? (
-            <View style={styles.emptyState}>
+        <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>
                 {searchTerm ? `No cards found matching "${searchTerm}"` : "No cards in this deck. Add your first card!"}
               </Text>
               {!searchTerm && <Button title="Add Card" onPress={handleAddCard} />}
-            </View>
-          ) : (
-            <>
-              <FlatList
+        </View>
+      ) : (
+        <>
+          <FlatList
                 data={filteredCards}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <FlashCard
-                    card={item}
-                    onEdit={() => handleEditCard(item)}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <FlashCard
+                card={item}
+                onEdit={() => handleEditCard(item)}
                     onDelete={() => handleDeleteCard(item.id)}
-                  />
-                )}
-                contentContainerStyle={styles.listContent}
               />
-              <View style={styles.buttonContainer}>
-                <Button title="Start Review" onPress={handleStartReview} />
-              </View>
+            )}
+            contentContainerStyle={styles.listContent}
+          />
+          <View style={styles.buttonContainer}>
+            <Button title="Start Review" onPress={handleStartReview} />
+          </View>
             </>
           )}
         </>

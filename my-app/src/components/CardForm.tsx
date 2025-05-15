@@ -48,10 +48,10 @@ const CardForm: React.FC<CardFormProps> = ({
       try {
         const response = await fetch(url);
         const data = await response.json();
-        
+      
         if (data.responseData && data.responseData.translatedText) {
           setBack(data.responseData.translatedText);
-        } else {
+      } else {
           throw new Error('Translation failed');
         }
       } catch (fetchError) {

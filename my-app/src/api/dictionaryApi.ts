@@ -22,7 +22,6 @@ interface DictionaryResponse {
   }>;
 }
 
-// Using the Free Dictionary API
 export const dictionaryApi = createApi({
   reducerPath: 'dictionaryApi',
   baseQuery: fetchBaseQuery({ baseUrl: 'https://api.dictionaryapi.dev/api/v2/entries/' }),

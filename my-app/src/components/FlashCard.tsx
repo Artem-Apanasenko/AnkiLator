@@ -6,7 +6,7 @@ import Animated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
-  withSequence,
+  withDelay,
   withTiming
 } from 'react-native-reanimated';
 import { Card } from '../types';
@@ -36,25 +36,26 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       Extrapolate.CLAMP
     );
     
-    // Add a slight wobble effect at the end of the flip
     const scaleValue = interpolate(
       rotation.value,
-      [0, 0.5, 0.6, 0.8, 1],
-      [1, 0.95, 1.05, 1.02, 1],
+      [0, 0.5, 1],
+      [1, 1.05, 1],
       Extrapolate.CLAMP
     );
     
+    const opacity = rotation.value <= 0.5 ? 1 : 0;
+    
     return {
       transform: [
-        { perspective: 1500 },
+        { perspective: 1200 },
         { rotateY: `${rotateValue}deg` },
         { scale: scaleValue },
       ],
-      backfaceVisibility: 'hidden',
-      opacity: rotation.value >= 0.5 ? 0 : 1,
+      opacity,
       position: 'absolute',
       width: '100%',
       height: '100%',
+      backfaceVisibility: 'hidden',
     };
   });
 
@@ -66,46 +67,45 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       Extrapolate.CLAMP
     );
     
-    // Add a slight wobble effect at the end of the flip
     const scaleValue = interpolate(
       rotation.value,
-      [0, 0.2, 0.4, 0.5, 1],
-      [1, 1.02, 1.05, 0.95, 1],
+      [0, 0.5, 1],
+      [1, 1.05, 1],
       Extrapolate.CLAMP
     );
     
+    const opacity = rotation.value > 0.5 ? 1 : 0;
+    
     return {
       transform: [
-        { perspective: 1500 },
+        { perspective: 1200 },
         { rotateY: `${rotateValue}deg` },
         { scale: scaleValue },
       ],
-      backfaceVisibility: 'hidden',
-      opacity: rotation.value >= 0.5 ? 1 : 0,
+      opacity,
       position: 'absolute',
       width: '100%',
       height: '100%',
+      backfaceVisibility: 'hidden',
     };
   });
 
-  const cardAnimatedStyle = useAnimatedStyle(() => {
+  const containerScaleStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: scale.value }],
     };
   });
 
   const handleFlip = () => {
-    // Add a touch feedback effect
-    scale.value = withSequence(
-      withTiming(0.95, { duration: 100 }),
-      withTiming(1, { duration: 100 })
-    );
-    
-    // Execute the flip with a more sophisticated animation
     const newValue = isFlipped ? 0 : 1;
+    
+    scale.value = withTiming(1.03, { duration: 150 });
+    
     rotation.value = withTiming(newValue, {
-      duration: 600,
-      easing: Easing.bezier(0.25, 0.1, 0.25, 1.1),
+      duration: 500,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    }, () => {
+      scale.value = withDelay(100, withTiming(1, { duration: 200 }));
     });
     
     setIsFlipped(!isFlipped);
@@ -113,24 +113,16 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.cardShadow, cardAnimatedStyle]}>
-        <Pressable onPress={handleFlip} style={styles.cardContainer}>
+      <Pressable onPress={handleFlip} style={styles.cardContainer}>
+        <Animated.View style={[styles.cardWrapper, containerScaleStyle]}>
           <Animated.View style={[styles.card, styles.cardFront, frontAnimatedStyle]}>
             <Text style={styles.cardText}>{card.front}</Text>
             {!reviewMode && (
               <View style={styles.actionButtons}>
-                <TouchableOpacity 
-                  style={styles.iconButton} 
-                  onPress={onEdit}
-                  activeOpacity={0.7}
-                >
+                <TouchableOpacity style={styles.iconButton} onPress={onEdit}>
                   <Text style={styles.iconText}>✏️</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.iconButton} 
-                  onPress={onDelete}
-                  activeOpacity={0.7}
-                >
+                <TouchableOpacity style={styles.iconButton} onPress={onDelete}>
                   <Text style={styles.iconText}>🗑️</Text>
                 </TouchableOpacity>
               </View>
@@ -140,25 +132,17 @@ export const FlashCard: React.FC<FlashCardProps> = ({
             <Text style={styles.cardText}>{card.back}</Text>
             {!reviewMode && (
               <View style={styles.actionButtons}>
-                <TouchableOpacity 
-                  style={styles.iconButton} 
-                  onPress={onEdit}
-                  activeOpacity={0.7}
-                >
+                <TouchableOpacity style={styles.iconButton} onPress={onEdit}>
                   <Text style={styles.iconText}>✏️</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.iconButton} 
-                  onPress={onDelete}
-                  activeOpacity={0.7}
-                >
+                <TouchableOpacity style={styles.iconButton} onPress={onDelete}>
                   <Text style={styles.iconText}>🗑️</Text>
                 </TouchableOpacity>
               </View>
             )}
           </Animated.View>
-        </Pressable>
-      </Animated.View>
+        </Animated.View>
+      </Pressable>
     </View>
   );
 };
@@ -169,18 +153,22 @@ const styles = StyleSheet.create({
     height: 200,
     marginVertical: 10,
   },
-  cardShadow: {
-    flex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 8,
-  },
   cardContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cardWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   card: {
     width: '100%',
@@ -189,8 +177,6 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   cardFront: {
     backgroundColor: '#4a69bd',
@@ -202,7 +188,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 20,
     textAlign: 'center',
-    fontWeight: '500',
   },
   actionButtons: {
     position: 'absolute',
