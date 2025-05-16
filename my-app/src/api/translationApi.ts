@@ -44,14 +44,12 @@ const supportedLanguages = [
   { code: 'vi', name: 'Vietnamese' },
 ];
 
-// Basic API for compatibility - we'll actually use fetch directly
 export const translationApi = createApi({
   reducerPath: 'translationApi',
   baseQuery: fetchBaseQuery({ 
     baseUrl: '/',
   }),
   endpoints: (builder) => ({
-    // Empty endpoints - we'll handle the actual API calls in our custom hooks
     translateText: builder.mutation<TranslateTextResponse, TranslateTextParams>({
       query: () => ({ url: '' })
     }),
@@ -61,14 +59,12 @@ export const translationApi = createApi({
   }),
 });
 
-// Custom useTranslateTextMutation hook that matches RTK Query's interface
 export const useTranslateTextMutation = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const translateText = async (params: TranslateTextParams) => {
     setIsLoading(true);
     
-    // Make the object match what RTK Query returns
     const result = {
       unwrap: async () => {
         try {
@@ -97,7 +93,6 @@ export const useTranslateTextMutation = () => {
   return [translateText, { isLoading }];
 };
 
-// Custom hook to provide the language list
 export const useGetSupportedLanguagesQuery = () => {
   return {
     data: supportedLanguages,
